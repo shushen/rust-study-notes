@@ -7,7 +7,7 @@
 
 - A new scope block created with curly brackets is an experssion
 
-    ```
+    ```rust
     let y = {
         let x = 3;
         x + 1
@@ -15,3 +15,17 @@
     ```
     Note that the x + 1 line doesn’t have a semicolon at the end, which is unlike most of the lines you’ve seen so far. Expressions do not include ending semicolons, otherwise it turns into a statement and will not return a value. ([ref](https://doc.rust-lang.org/reference/expressions/block-expr.html))
 
+
+## Control flow
+- The codition in an `if` expression must be a `bool`. Rust will not automatically try to convert non-Boolean types to a Boolean.
+
+- Returning values from loops
+    ```rust
+    let mut counter = 0;
+    let result = loop {
+        counter += 1;
+        if counter == 10 {
+            break counter * 2;
+        }
+    };
+    ```
