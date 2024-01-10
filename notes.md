@@ -1,5 +1,18 @@
 # Rust study notes
 
+## Ownership Rules
+- Each value in Rust has an *owner*.
+- There can only be one owner at a time.
+- When the owner goes out of scope, the value will be dropped.
+
+## Referecnces and Borrowing
+- Borrowing is the action of creating a reference.
+- References are immutable by default
+- A *mutable reference* allows the borrower to modify a borrowed value
+- The rules of references:
+    - At any given time, you can have *either* one mutable reference *or* any number of immutable references
+    - References must always be valid.
+
 ## Data types
 - *unit* type: a tuple type with no fields `()` is often called *unit* or *unit type*. Its one value is also called *unit* or *the unit value*. ([ref](https://doc.rust-lang.org/reference/types/tuple.html?highlight=unit%20type#tuple-types))
 
@@ -29,3 +42,23 @@
         }
     };
     ```
+
+- Specifying a *loop label* on a loop to be used by `break` or `continue` to apply these keywords to the labeled loop instead of the innormost loop. Loop labels must begin with a single quote.
+   ```rust
+    fn main() {
+        let mut count = 0;
+        'counting_up: loop {
+            let mut remaining = 10;
+            loop {
+                if remaining == 9 {
+                    break;
+                }
+                if count == 2 {
+                    break 'counting_up;
+                }
+                remaining -= 1;
+            }
+            count += 1;
+        }
+    }
+   ```
