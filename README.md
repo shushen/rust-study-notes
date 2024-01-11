@@ -1,4 +1,5 @@
 # Rust study notes
+Notes from [The Rust Programming Language](https://doc.rust-lang.org/stable/book/) book.
 
 ## Ownership Rules
 - Each value in Rust has an *owner*.
