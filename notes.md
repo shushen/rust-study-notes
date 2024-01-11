@@ -17,6 +17,25 @@
 
 ## Data types
 - *unit* type: a tuple type with no fields `()` is often called *unit* or *unit type*. Its one value is also called *unit* or *the unit value*. ([ref](https://doc.rust-lang.org/reference/types/tuple.html?highlight=unit%20type#tuple-types))
+- *enums* are defined by enumerating its possible *variants*. Each variant can have data attached and the name of each enum varient becomes a function that constructs an instance of the enum.
+    ```rust
+    enum IpAddr {
+        V4(u8, u8, u8, u8),
+        V6(String),
+    }
+    let home = IpAddr::V4(127, 0, 0, 1);
+    let loopback = IpAddr::V6(String::from("::1"));
+    ```
+- The `Option<T>` enum is included in the prelude and doesn't need be brought into scope explicitly. Its variants are also included in the prelude: you can use `Some` and `None` directly without the `Option::` prefix.
+    ```rust
+    enum Option<T> {
+        None,
+        Some(T),
+    }
+    ```
+    - `<T>` is a generic type parameter, which means that the `Some` variant of the `Option` enum can hold one piece of data of any type, and that each concrete type that gets used in place of `T` makes the overall `Option<T>` type a different type.
+    - **In order to have a value that can possibly be null, you must explicitly opt in by making the type of that value `Option<T>`. Then, when you use that value, you are required to explicitly handle the case when the value is null.**
+    - The `Option<T>` enum has a large number of methods that are useful in a variety of situations. ([ref](https://doc.rust-lang.org/stable/std/option/enum.Option.html))
 
 ## Functions
 
@@ -64,6 +83,76 @@
         }
     }
    ```
+- The power of `match` control flow construct comes from the expressiveness of the patterns and the fact that the compiler confirms that all possible cases are handled.
+    - Patterns that bind to values:
+        ```rust
+        enum UsState {
+            Alabama,
+            Alaska,
+            // --snip--
+        }
+
+        enum Coin {
+            Penny,
+            Nickel,
+            Dime,
+            Quarter(UsState),
+        }
+        fn value_in_cents(coin: Coin) -> u8 {
+            match coin {
+                Coin::Penny => 1,
+                Coin::Nickel => 5,
+                Coin::Dime => 10,
+                Coin::Quarter(state) => {
+                    println!("State quarter from {:?}!", state);
+                    25
+                }
+            }
+        }
+        ```
+    - Matching with `Option<T>` needs be exhaustive (handling all cases):
+        ```rust
+        fn plus_one(x: Option<i32>) -> Option<i32> {
+            match x {
+                None => None,
+                Some(i) => Some(i + 1),
+            }
+        }
+
+        let five = Some(5);
+        let six = plus_one(five);
+        let none = plus_one(None);
+        ```
+    - Catch-all patterns and the `_` placeholder
+        ```rust
+        let dice_roll = 9;
+        match dice_roll {
+            3 => add_fancy_hat(),
+            7 => remove_fancy_hat(),
+            _ => (),
+        }
+
+        fn add_fancy_hat() {}
+        fn remove_fancy_hat() {}
+        ```
+        Note that the unit value `()` is used to express that nothing happens with the `_` arm that catches all other patterns.
+- Concise control flow with `if let` can be considered as a syntax sugar for a `match` that runs code when the value matches one pattern and then ignores all other values. Choosing between `match` and `if let` depends on what you’re doing in your particular situation and whether gaining conciseness is an appropriate trade-off for losing exhaustive checking.
+    ```rust
+    let mut count = 0;
+    match coin {
+        Coin::Quarter(state) => println!("State quarter from {:?}!", state),
+        _ => count += 1,
+    }
+    ```
+    vs
+    ```rust
+    let mut count = 0;
+    if let Coin::Quarter(state) = coin {
+        println!("State quarter from {:?}!", state);
+    } else {
+        count += 1;
+    }
+    ```
 
 ## Structs
 - The entirity of a mutable struct instance has to be mutable and Rust does not allow individual fields to be marked as mutable.
@@ -141,7 +230,7 @@
     - Within an impl block, the type `Self `is an alias for the type that the `impl block is for.
     - Methods must have a parameter named self of type `Self` for their first parameter. Methods can take ownership of `self`, borrow self immutably (`&self`), or borrow `self` mutably (`&mut self`).
     - Having a method that takes ownership of the instance by using just self as the first parameter is rare; this technique is usually used when the method transforms self into something else and you want to prevent the caller from using the original instance after the transformation.
-    - All functions defined within an `impl` block are called associated functions because they’re associated with the type named after the `impl`. 
+    - All functions defined within an `impl` block are called associated functions because they’re associated with the type named after the `impl`.
     - We can define associated functions that don’t have self as their first parameter (and thus are not methods) because they don’t need an instance of the type to work with.
         ```rust
         impl Rectangle {
