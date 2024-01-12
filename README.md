@@ -244,3 +244,51 @@ Notes from [The Rust Programming Language](https://doc.rust-lang.org/stable/book
         }
         ```
     - Each struct is allowed to have multiple `impl` blocks.
+
+## Rust module system
+- Paths: A way of naming an item, such as a struct, function, or module.
+    - An *absolute* path is the full path starting from a crate root; for code from an external crate, the absolute path begins with the crate name, and for code from the current crate, it starts with the literal `crate`.
+    - A *relative* path starts from the current module and uses `self`, `super`, or an identifier in the current module.
+    - Both absolute and relative paths are followed by one or more identifiers separated by double colons (`::`).
+- Modules and use: Let you control the organization, scope, and privacy of paths. (see [Module Cheat Sheet](#modules-cheat-sheet))
+- Crates: A tree of modules that produces a library or executable
+    - *Binary crates* are programs compile into an executable and must have a function called `main` that defines the entry point.
+    - *Library crates* don’t have a `main` function, and they don’t compile to an executable.
+    - The *crate root* is a source file that the Rust compiler starts from and makes up the root module of the crate.
+- Packages: A Cargo feature that lets you build, test, and share crates
+    - A *package* is a bundle of one or more crates that provides a set of functionality. A package contains a `Cargo.toml` file that describes how to build those crates.
+    - A package can contain as many binary crates as you like, but **at most only one library crate**. A package must contain at least one crate, whether that’s a library or binary crate.
+    - Cargo follows a convention that
+        - `src/main.rs` is the crate root of a binary crate with the same name as the package.
+        - `src/lib.rs` is the crate root of a library crate with the same name as the package
+        - Cargo passes the crate root files to `rustc` to build the library or binary.
+        - A package can have multiple binary crates by placing files in the `src/bin` directory: each file will be a separate binary crate.
+
+### Modules Cheat Sheet
+
+- *Start from the crate root*: When compiling a crate, the compiler first looks in the crate root file (usually `src/lib.rs` for a library crate or `src/main.rs` for a binary crate) for code to compile.
+- *Declaring modules*: In the crate root file, you can declare new modules
+    - Use module name in the `.rs` file instead of `mod.rs`:
+    ```
+    src/front_of_house.rs (idiomatic style)
+    src/front_of_house/mod.rs (older style, still supported path)
+    ```
+    - Only one style can be used for the same module; otherwise there will be a compiler error. The styles can be mixed for different modules in the same project but it should be avoided.
+- *Declaring submodules*: In any file other than the crate root, you can declare submodules.
+- *Paths to code in modules*: Once a module is part of your crate, you can refer to code in that module from anywhere else in that same crate, as long as the privacy rules allow, using the path to the code.
+- *Private vs public*: Code within a module is private from its parent modules by default. To make a module public, declare it with `pub mod` instead of `mod`. To make items within a public module public as well, use `pub` before their declarations. Items in child modules can use the items in their ancestor modules.
+    - If an enum is marked as public, all of its variants are public.
+    - Individual fields of a struct needs be marked by `pub` for a field to be public.
+    - A struct with a private field needs to have a public associated function as constructor; otherwise it'll be impossible to create an instance of the struct.
+- *The `use` keyword*: Within a scope, the `use` keyword creates shortcuts to items to reduce repetition of long paths.
+    -  Use `use crate::front_of_house::hosting;` to bring the parent of a function into scope instead of the function itself `use crate::front_of_house::hosting::add_to_waitlist`.
+    - Use full path `use std::collections::HashMap;` to bring in structs, enums, and other items with `use`.
+    - Create an `alias` with `use .. as`: `use std::io::Result as IoResult;`.
+    - Rexporing names with `pub use`: `pub use crate::front_of_house::hosting;`.
+    - Use nested paths: `use std::{cmp::Ordering, io};` or with `self`: `use std::io::{self, Write};`
+    - The glob operator brings *all* public items into the scope: `use std::collections::*;`.
+- Using external packages requires adding the package to `Cargo.toml` and then `use`:
+    ```rust
+    rand = "0.8.5"
+    ```
+    The standard `std` library is not required in `Cargo.toml` as it's shipped with Rust.
