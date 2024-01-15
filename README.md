@@ -17,7 +17,16 @@ Notes from [The Rust Programming Language](https://doc.rust-lang.org/stable/book
 - String literals has the type `&str` and is a slice pointing to the stack memory that stores the string value.
 
 ## Data types
+- A *tuple* can have different data types for each of its elements and always has a fixed length once declared.
+    - Despite having a fixed length, a tuple can be made mutable such that its elements can be changed as long as their data types are maintained.
+    - Elements of a tuple can be accessed with a dot notation, such as `t.0`, `t.1`, etc.
 - *unit* type: a tuple type with no fields `()` is often called *unit* or *unit type*. Its one value is also called *unit* or *the unit value*. ([ref](https://doc.rust-lang.org/reference/types/tuple.html?highlight=unit%20type#tuple-types))
+- An *array* is like a tuple but all elements of an array have to be of the same data tuple.
+    - Like a tuple, an array also has a fixed length once defined.
+    - Like a tuple, an array can also be made mutable.
+    - Unlike a tuple, an array can have repeated elements: `arr = [3; 5]` is equivalent to `arr = [3, 3, 3, 3, 3]`.
+    - A multidimensional array: `[[1.0; 10]; 10]`
+    - Invalid array element access is checked during runtime by Rust and will result in a runtime error.
 - *enums* are defined by enumerating its possible *variants*. Each variant can have data attached and the name of each enum varient becomes a function that constructs an instance of the enum.
     ```rust
     enum IpAddr {
@@ -37,6 +46,19 @@ Notes from [The Rust Programming Language](https://doc.rust-lang.org/stable/book
     - `<T>` is a generic type parameter, which means that the `Some` variant of the `Option` enum can hold one piece of data of any type, and that each concrete type that gets used in place of `T` makes the overall `Option<T>` type a different type.
     - **In order to have a value that can possibly be null, you must explicitly opt in by making the type of that value `Option<T>`. Then, when you use that value, you are required to explicitly handle the case when the value is null.**
     - The `Option<T>` enum has a large number of methods that are useful in a variety of situations. ([ref](https://doc.rust-lang.org/stable/std/option/enum.Option.html))
+
+### Integer overflow
+- Rust checks for integer overflow only in debug mode and will cause the program to panic. In release mode, which is compiled with the `--release` flag, Rust performs *two's complement wrapping*, where values greater than the maximum value the type can hold "wrap around" to the minimum of the values the type can hold and vice versa; the program won't panic.
+- To explicitly handle the possibility of overflow, you can use these families of methods provided by the standard library for primitive numeric types (see [the associated methods of `u32`](https://doc.rust-lang.org/std/primitive.u32.html) for examples):
+    - Wrap in all modes with the `wrapping_*` methods, such as `wrapping_add`.
+    - Return the `None` value if there is overflow with the `checked_*` methods.
+    - Return the value and a boolean indicating whether there was overflow with the `overflowing_*` methods.
+    - Saturate at the value’s minimum or maximum values with the `saturating_*` methods.
+
+## Variable and mutability
+- A constant defined by `const` requires annotating the data type. Constants live for the entire lifetime of a program and is inlined to each place they are used.
+- An immutable variable defined by `let` cannot be in global scope.
+- A global variable is defined by `static`, which, unlike a constant, is not inlined and has only one instance and a fixed location in memory. The data type of a `static` global variable also needs be annotated. A global variable can be made mutable with `static mut`.
 
 ## Functions
 
@@ -185,33 +207,42 @@ Notes from [The Rust Programming Language](https://doc.rust-lang.org/stable/book
         };
 
         let rect2 = Rectangle {
+            name: String::from("rect2"),
+            ..rect1
+        };
+        dbg!(&rect1);
+
+        let rect3 = Rectangle {
             width: 15,
             ..rect1
         };
 
         dbg!(&rect1);
         dbg!(&rect2);
+        dbg!(&rect3);
     }
     ```
-    This would cause compiler error as the `name` field moved to `rect2` and `rect1` can no longer be accessed.
+    This would cause compiler error as the `name` field moved to `rect3` and `rect1` can no longer be accessed.
     ```
     error[E0382]: borrow of partially moved value: `rect1`
-    --> src/main.rs:22:10
+      --> src/main.rs:28:14
        |
-    17 |       let rect2 = Rectangle {
-       |  _________________-
-    18 | |         width: 15,
-    19 | |         ..rect1
-    20 | |     };
-       | |_____- value partially moved here
-    21 |
-    22 |       dbg!(&rect1);
-       |            ^^^^^^ value borrowed here after partial move
+    23 |           let rect3 = Rectangle {
+       |  _____________________-
+    24 | |             width: 15,
+    25 | |             ..rect1
+    26 | |         };
+       | |_________- value partially moved here
+    27 |
+    28 |           dbg!(&rect1);
+       |                ^^^^^^ value borrowed here after partial move
        |
        = note: partial move occurs because `rect1.name` has type `String`, which does not implement the `Copy` trait
 
     For more information about this error, try `rustc --explain E0382`.
     ```
+    But note that for the `rect2` update, since the `name` field of `rect1` was not used in the update, the filed is not moved and thus `rect1` is still accessible after `rect2` assignment.
+
 - Tuple structs without named fields
    ```rust
    struct Color(i32, i32, i32);
